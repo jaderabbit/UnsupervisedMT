@@ -4,11 +4,22 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 #
+
+# usage: ./get_my_data.sh zu https://github.com/LauraMartinus/ukuxhumana/raw/master/leipzig/web_2013_100K_mono.zu
 SOURCE=en
-TARGET=zu
+TARGET=$1
 MONO_SRC=mono
-VALID=enzu_parallel.dev
-TEST=enzu_parallel.test
+VALID=en${TARGET}_parallel.dev
+TEST=en${TARGET}_parallel.test
+MONO_TARGET_URL=$2
+
+echo ""
+echo "===== Input parameters"
+echo " source: $SOURCE"
+echo " target: $TARGET"
+echo " target monolingual url: $MONO_TARGET_URL"
+echo " "
+
 set -e
 
 #
@@ -123,7 +134,6 @@ echo "fastText compiled in: $FASTTEXT"
 
 cd $MONO_PATH
 MONO_ENGLISH=http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2007.en.shuffled.gz
-MONO_ZULU=https://github.com/LauraMartinus/ukuxhumana/raw/master/leipzig/web_2013_100K_mono.zu
 echo "Downloading English files..."
 if [ ! -f $MONO_SRC.$SOURCE ]; then
     wget -c $MONO_ENGLISH
@@ -131,9 +141,7 @@ fi
 
 echo "Downloading $TARGET files..."
 if [ ! -f $MONO_SRC.$TARGET ]; then
-    wget -c $MONO_ZULU  --output-document $MONO_SRC.$TARGET
-    wget -c https://github.com/LauraMartinus/ukuxhumana/raw/master/clean/en_zu/enzu_parallel.dev.zu
-    wget -c https://github.com/LauraMartinus/ukuxhumana/raw/master/clean/en_zu/enzu_parallel.test.zu
+    wget -c $MONO_TARGET_URL  --output-document $MONO_SRC.$TARGET
 fi
 
 # Files already decompressed
@@ -155,7 +163,7 @@ if ! [[ "$(wc -l < $SRC_RAW)" -eq "$N_MONO" ]]; then
     sed -i '100001,$ d' $SRC_RAW 
 fi
 if ! [[ "$(wc -l < $TGT_RAW)" -eq "$N_MONO" ]]; then 
-    echo "ERROR: Number of lines doesn't match! Be sure you have $N_MONO sentences in your ZU monolingual data."; 
+    echo "ERROR: Number of lines doesn't match! Be sure you have $N_MONO sentences in your $TARGET monolingual data."; 
     echo "Truncating file...";
     sed -i '100001,$ d' $TGT_RAW
 fi
@@ -164,10 +172,10 @@ fi
 if ! [[ -f "$SRC_TOK" && -f "$TGT_TOK" ]]; then
   echo "Tokenize monolingual data..."
   cat $SRC_RAW | $NORM_PUNC -l en | $TOKENIZER -l en -no-escape -threads $N_THREADS > $SRC_TOK
-  cat $TGT_RAW | $NORM_PUNC -l zu | $TOKENIZER -l zu -no-escape -threads $N_THREADS > $TGT_TOK
+  cat $TGT_RAW | $NORM_PUNC -l $TARGET | $TOKENIZER -l $TARGET -no-escape -threads $N_THREADS > $TGT_TOK
 fi
 echo "EN monolingual data tokenized in: $SRC_TOK"
-echo "ZU monolingual data tokenized in: $TGT_TOK"
+echo "$TARGET monolingual data tokenized in: $TGT_TOK"
 
 
 # learn BPE codes
@@ -185,7 +193,7 @@ if ! [[ -f "$SRC_TOK.$CODES" && -f "$TGT_TOK.$CODES" ]]; then
   $FASTBPE applybpe $TGT_TOK.$CODES $TGT_TOK $BPE_CODES
 fi
 echo "BPE codes applied to EN in: $SRC_TOK.$CODES"
-echo "BPE codes applied to ZU in: $TGT_TOK.$CODES"
+echo "BPE codes applied to $TARGET in: $TGT_TOK.$CODES"
 
 # extract vocabulary
 if ! [[ -f "$SRC_VOCAB" && -f "$TGT_VOCAB" && -f "$FULL_VOCAB" ]]; then
@@ -195,7 +203,7 @@ if ! [[ -f "$SRC_VOCAB" && -f "$TGT_VOCAB" && -f "$FULL_VOCAB" ]]; then
   $FASTBPE getvocab $SRC_TOK.$CODES $TGT_TOK.$CODES > $FULL_VOCAB
 fi
 echo "EN vocab in: $SRC_VOCAB"
-echo "ZU vocab in: $TGT_VOCAB"
+echo "$TARGET vocab in: $TGT_VOCAB"
 echo "Full vocab in: $FULL_VOCAB"
 
 # binarize data
@@ -205,7 +213,7 @@ if ! [[ -f "$SRC_TOK.$CODES.pth" && -f "$TGT_TOK.$CODES.pth" ]]; then
   $UMT_PATH/preprocess.py $FULL_VOCAB $TGT_TOK.$CODES
 fi
 echo "EN binarized data in: $SRC_TOK.$CODES.pth"
-echo "ZU binarized data in: $TGT_TOK.$CODES.pth"
+echo "$TARGET binarized data in: $TGT_TOK.$CODES.pth"
 
 
 #
@@ -232,9 +240,9 @@ if ! [[ -f "$TGT_TEST" ]]; then echo "$TGT_TEST is not found!"; exit; fi
 
 echo "Tokenizing valid and test data..."
 cat $SRC_VALID | $NORM_PUNC -l en | $REM_NON_PRINT_CHAR | $TOKENIZER -l en -no-escape -threads $N_THREADS > $SRC_VALID.tmp
-cat $TGT_VALID | $NORM_PUNC -l zu | $REM_NON_PRINT_CHAR | $TOKENIZER -l zu -no-escape -threads $N_THREADS > $TGT_VALID.tmp
+cat $TGT_VALID | $NORM_PUNC -l $TARGET | $REM_NON_PRINT_CHAR | $TOKENIZER -l $TARGET -no-escape -threads $N_THREADS > $TGT_VALID.tmp
 cat $SRC_TEST | $NORM_PUNC -l en | $REM_NON_PRINT_CHAR | $TOKENIZER -l en -no-escape -threads $N_THREADS > $SRC_TEST.tmp
-cat $TGT_TEST | $NORM_PUNC -l zu | $REM_NON_PRINT_CHAR | $TOKENIZER -l zu -no-escape -threads $N_THREADS > $TGT_TEST.tmp
+cat $TGT_TEST | $NORM_PUNC -l $TARGET | $REM_NON_PRINT_CHAR | $TOKENIZER -l $TARGET -no-escape -threads $N_THREADS > $TGT_TEST.tmp
 
 mv $SRC_VALID.tmp $SRC_VALID
 mv $TGT_VALID.tmp $TGT_VALID
@@ -263,14 +271,14 @@ $UMT_PATH/preprocess.py $FULL_VOCAB $TGT_TEST.$CODES
 echo ""
 echo "===== Data summary"
 echo "Monolingual training data:"
-echo "    EN: $SRC_TOK.$CODES.pth"
-echo "    ZU: $TGT_TOK.$CODES.pth"
+echo "    $SOURCE: $SRC_TOK.$CODES.pth"
+echo "    $TARGET: $TGT_TOK.$CODES.pth"
 echo "Parallel validation data:"
-echo "    EN: $SRC_VALID.$CODES.pth"
-echo "    ZU: $TGT_VALID.$CODES.pth"
+echo "    $SOURCE: $SRC_VALID.$CODES.pth"
+echo "    $TARGET: $TGT_VALID.$CODES.pth"
 echo "Parallel test data:"
-echo "    EN: $SRC_TEST.$CODES.pth"
-echo "    ZU: $TGT_TEST.$CODES.pth"
+echo "    $SOURCE: $SRC_TEST.$CODES.pth"
+echo "    $TARGET: $TGT_TEST.$CODES.pth"
 echo ""
 
 #
