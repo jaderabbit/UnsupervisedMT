@@ -349,7 +349,7 @@ def restore_segmentation(path):
     Take a file segmented with BPE and restore it to its original segmentation.
     """
     assert os.path.isfile(path)
-    restore_cmd = "sed -i -r 's/(@@ )|(@@ ?$)//g' %s"
+    restore_cmd = "sed -i -r 's/(@@ )|(@@ ?$)//g' '%s'"
     subprocess.Popen(restore_cmd % path, shell=True).wait()
 
 
