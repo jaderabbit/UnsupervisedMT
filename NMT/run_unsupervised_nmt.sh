@@ -2,6 +2,7 @@
 ## With
 #usage: run_unsupervised_nmt.sh 
 TARGET=$1
+DUMP_PATH=$1
 MONO_DATASET="en:./data/mono/mono.en.tok.60000.pth,,;$TARGET:./data/mono/mono.$TARGET.tok.60000.pth,,"
 PARA_DATASET="en-$TARGET:,./data/para/en$TARGET_parallel.dev.en.60000.pth,./data/para/en$TARGET_parallel.dev.$TARGET.60000.pth"
 PRETRAINED="./data/mono/all.en-$TARGET.60000.vec"
@@ -26,6 +27,7 @@ python main.py --exp_name en$TARGET \
     --group_by_size True \
     --batch_size 32 \
     --epoch_size 500000 --stopping_criterion bleu_en_${TARGET}_valid,10 \
-    --freeze_enc_emb False --freeze_dec_emb False                   
+    --freeze_enc_emb False --freeze_dec_emb False \
+    --dump_path $DUMP_PATH           
 
 
