@@ -92,13 +92,13 @@ def get_dump_path(params):
     """
     assert len(params.exp_name) > 0
     dump_path = './' if params.dump_path == '' else params.dump_path
-    subprocess.Popen("mkdir -p %s" % dump_path, shell=True).wait()
+    subprocess.Popen("mkdir -p '%s'" % dump_path, shell=True).wait()
     assert os.path.isdir(dump_path)
 
     # create the sweep path if it does not exist
     sweep_path = os.path.join(dump_path, params.exp_name)
     if not os.path.exists(sweep_path):
-        subprocess.Popen("mkdir %s" % sweep_path, shell=True).wait()
+        subprocess.Popen("mkdir '%s'" % sweep_path, shell=True).wait()
 
     # create an ID for the job if it is not given in the parameters.
     # if we run on the cluster, the job ID is the one of Chronos.
@@ -122,7 +122,7 @@ def get_dump_path(params):
     # create the dump folder / update parameters
     params.dump_path = os.path.join(sweep_path, params.exp_id)
     if not os.path.isdir(params.dump_path):
-        subprocess.Popen("mkdir %s" % params.dump_path, shell=True).wait()
+        subprocess.Popen("mkdir '%s'" % params.dump_path, shell=True).wait()
 
 
 def get_optimizer(parameters, s):
